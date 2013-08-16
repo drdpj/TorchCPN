@@ -1,11 +1,13 @@
 package net.umbriel.torch;
 
+import java.util.ArrayList;
+
 public class Sector {
 
 	private int side=0;
 	private int track=0;
 	private int sectorNumber=0;
-	private int[] data= new int[256];
+	private ArrayList<Integer> data;
 	private int blockNumber=0;
 	
 	/**
@@ -16,6 +18,12 @@ public class Sector {
 		
 	}
 	
+	/**
+	 * 
+	 * @param track
+	 * @param side
+	 * @param sector
+	 */
 	public Sector(int track, int side, int sector) {
 		setTrack(track);
 		setSide(side);
@@ -78,14 +86,14 @@ public class Sector {
 	/**
 	 * @return the data
 	 */
-	public int[] getData() {
+	public ArrayList<Integer> getData() {
 		return data;
 	}
 
 	/**
 	 * @param data the data to set
 	 */
-	public void setData(int[] data) {
+	public void setData(ArrayList<Integer> data) {
 		this.data = data;
 	}
 
