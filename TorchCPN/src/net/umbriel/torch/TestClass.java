@@ -46,8 +46,8 @@ public class TestClass {
 			System.out.println("Disk Image in Hash");
 			//Output files...
 			ArrayList<DirectoryItem> directory = new ArrayList<DirectoryItem>();
-			for (int i=0; i<9; i++) {
-				Sector currentSector = diskHash.get(i);
+			for (int i=0; i<16; i++) {
+				Sector currentSector = diskImage.get(i);
 				//Directory entries are 16 bytes...
 				for (int j=0; j<256; j+=16) {
 					directory.add(new DirectoryItem((currentSector.getData().subList(j, j+16))));
@@ -59,6 +59,15 @@ public class TestClass {
 			while (iter2.hasNext()) {
 				iter2.next().printInfo();
 			}
+			
+			//Allocation map is two sectors of 256 bytes.
+			ArrayList<Integer> tempData = new ArrayList<Integer>();
+			for (int i=16; i<18; i++) {
+				tempData.addAll(diskImage.get(i).getData());
+			}
+			
+			AllocationMap map = new AllocationMap(tempData.toArray(new Integer[0]));
+			map.displayMap();
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
