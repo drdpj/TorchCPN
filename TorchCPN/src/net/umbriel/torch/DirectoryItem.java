@@ -33,12 +33,12 @@ public class DirectoryItem {
 		//block address:
 		int lsb= this.getRawData()[0] & 0xFF;
 		int msb= this.getRawData()[1] & 0xFF;
-		this.setBlockAddress((byte) msb<< 8 + (byte)lsb);
+		this.setBlockAddress( msb<< 8 + lsb);
 		
 		//high record
 		lsb=this.getRawData()[2] & 0xFF;
 		msb=this.getRawData()[3] & 0xFF;
-		this.setHighRecordNumber((byte)msb<<8 +(byte)lsb);
+		this.setHighRecordNumber(msb<<8 +lsb);
 		
 		//user number
 		this.setUserNumber(this.getRawData()[4]);
