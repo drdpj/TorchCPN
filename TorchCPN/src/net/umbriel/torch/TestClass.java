@@ -55,6 +55,10 @@ public class TestClass {
 				
 			}
 			System.out.println("Directory size: "+directory.size());
+			Iterator<DirectoryItem> iter2 = directory.iterator();
+			while (iter2.hasNext()) {
+				iter2.next().printInfo();
+			}
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

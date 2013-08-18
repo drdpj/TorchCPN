@@ -16,33 +16,40 @@ public class DirectoryItem {
 	boolean readOnly = false;
 	boolean systemFile = false;
 	boolean archived = false;
-	
-	public DirectoryItem() {
+	int l2msb =0;
+	int l2lsb =0;
 
-	}
-	
 	public DirectoryItem(List<Integer> data) {
 		this.setRawData(data.toArray(new Integer[0]));
 	}
-	
-	
+
+
+
+	public void printInfo() {
+		if (getBlockAddress()!=0) System.out.println(getFileName()+"."+getExtension()+" SB:"+
+				Integer.toHexString(getBlockAddress())+ " size(bytes):"+(getHighRecordNumber()*128) +" l2:"+isL2Block());
+	}
+
 	/**
 	 * Process the raw data into the relevant pieces..
 	 */
 	private void processBytes() {
 		//block address:
 		int lsb= this.getRawData()[0] & 0xFF;
-		int msb= this.getRawData()[1] & 0xFF;
-		this.setBlockAddress( msb<< 8 + lsb);
-		
+		int msb= this.getRawData()[1] & 0x7F;
+		this.setBlockAddress( (msb<< 8) + lsb);
+
+		//L2 or L3?
+		setL2Block(((this.getRawData()[1] & 0x80)>>7)==1);
+
 		//high record
 		lsb=this.getRawData()[2] & 0xFF;
 		msb=this.getRawData()[3] & 0xFF;
-		this.setHighRecordNumber(msb<<8 +lsb);
-		
+		this.setHighRecordNumber((msb<<8) +lsb);
+
 		//user number
 		this.setUserNumber(this.getRawData()[4]);
-		
+
 		//Filename...
 		StringBuilder tempName = new StringBuilder();
 		for (int i=0; i<8; i++) {
@@ -50,7 +57,7 @@ public class DirectoryItem {
 			this.getAttributes()[i] = ((this.getRawData()[i+5] & 0x80)>>7)==1; //set the attributes
 		}
 		this.setFileName(tempName.toString());
-		
+
 		//Extension...
 		tempName = new StringBuilder();
 		for (int i=0; i<3; i++) {
@@ -61,14 +68,14 @@ public class DirectoryItem {
 		this.setSystemFile(((this.getRawData()[0xE]&0x7F)>>7)==1);
 		this.setArchived(((this.getRawData()[0xF]&0x7F)>>7)==1);
 	}
-	
+
 	public Integer[] getRawData() {
 		return rawData;
 	}
 	public void setRawData(Integer[] data) {
 		this.rawData = data;
 		processBytes();
-		
+
 	}
 	public int getBlockAddress() {
 		return blockAddress;
@@ -131,8 +138,8 @@ public class DirectoryItem {
 		this.archived = archived;
 	}
 
-	
-	
-	
-	
+
+
+
+
 }
