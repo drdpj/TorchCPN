@@ -1,8 +1,11 @@
 package net.umbriel.torch;
 
+import java.util.ArrayList;
+import java.util.Hashtable;
+
 public class DiskImage {
 
-	/**
+	/*
 	 * Torch disk images are two sides of 80 tracks with 10 sectors of
 	 * 256 bytes.  Each sector stores 2 128byte CPN records.
 	 * 
@@ -58,6 +61,25 @@ public class DiskImage {
 	 * 
 	 * 
 	 */
+	
+	private ArrayList<DirectoryItem> directory;
+	private AllocationMap map;
+	private ArrayList<Sector> sectors;
+	private Hashtable<Integer, Sector> blockMap;
+	
+	public DiskImage() {
+		map = new AllocationMap();
+		sectors = new ArrayList<Sector>();
+		directory = new ArrayList<DirectoryItem>();
+		blockMap = new Hashtable<Integer,Sector>();
+		
+		//Populate directory with empty items
+		for (int i=0; i<256; i++) {
+			directory.add(new DirectoryItem());
+		}
+		
+	}
+	
 	
 	
 }

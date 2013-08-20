@@ -19,6 +19,10 @@ public class DirectoryItem {
 	int l2msb =0;
 	int l2lsb =0;
 
+	public DirectoryItem() {
+		
+	}
+	
 	public DirectoryItem(List<Integer> data) {
 		this.setRawData(data.toArray(new Integer[0]));
 	}

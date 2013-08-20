@@ -52,23 +52,59 @@ public class TestClass {
 				for (int j=0; j<256; j+=16) {
 					directory.add(new DirectoryItem((currentSector.getData().subList(j, j+16))));
 				}
-				
+
 			}
 			System.out.println("Directory size: "+directory.size());
 			Iterator<DirectoryItem> iter2 = directory.iterator();
 			while (iter2.hasNext()) {
 				iter2.next().printInfo();
 			}
-			
+
 			//Allocation map is two sectors of 256 bytes.
 			ArrayList<Integer> tempData = new ArrayList<Integer>();
 			for (int i=16; i<18; i++) {
 				tempData.addAll(diskImage.get(i).getData());
 			}
-			
+
 			AllocationMap map = new AllocationMap(tempData.toArray(new Integer[0]));
 			map.displayMap();
-			
+
+			//Let's try and extract all the files...
+			iter2 = directory.iterator();
+			while (iter2.hasNext()) {
+				//get start block for starters.
+				DirectoryItem temp = iter2.next();
+				if (temp.getBlockAddress()!=0) {
+					if (temp.isL2Block()) {
+						System.out.println(temp.getFileName()+"."+temp.getExtension()+" L2:");
+						Sector tempSector = diskHash.get(temp.getBlockAddress());
+						for (int i=0; i< tempSector.getData().size(); i+=2) {
+							int lsb=tempSector.getData().get(i);
+							int msb=tempSector.getData().get(i+1);
+							int l3 = (msb<<8)+lsb;
+							if (l3!=0) {
+								System.out.println("L3 at:"+Integer.toHexString(l3));
+							}
+						}
+					} else {
+						System.out.println(temp.getFileName()+"."+temp.getExtension()+" L3:");
+						Sector tempSector = diskHash.get(temp.getBlockAddress());
+						for (int i=0; i< tempSector.getData().size();i+=2) {
+							int lsb=tempSector.getData().get(i);
+							int msb=tempSector.getData().get(i+1);
+							int data = ((msb & 0x3F)<<8)+lsb;
+							int flags = ((msb & 0xC0)>>6);
+							if (data!=0) {
+								System.out.println("Data at:"+Integer.toHexString(data)+" "+
+										Integer.toBinaryString(flags));
+							}
+						}
+					}
+				}
+	
+			}
+			AllocationMap map2 = new AllocationMap();
+			map2.displayMap();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

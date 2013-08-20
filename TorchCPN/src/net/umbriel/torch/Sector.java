@@ -30,13 +30,21 @@ public class Sector {
 		setSectorNumber(sector);
 	}
 
-	private void calculateBlock() {
-		blockNumber = (getTrack()*32)+(getSide()*16)+getSectorNumber();
+	/**
+	 * Calculate a block number from geometry provided. Static method.
+	 * @param track
+	 * @param side
+	 * @param sector
+	 * @return
+	 */
+	public static int sectorToBlock(int track, int side, int sector) {
+		return (track*32)+(side*16)+sector;
 	}
 	
-	private void calculateSector() {// don't know if we want to do this
-		
+	private void calculateBlock() {
+		blockNumber = sectorToBlock(getTrack(), getSide(), getSectorNumber());
 	}
+	
 	
 	/**
 	 * @return the side
