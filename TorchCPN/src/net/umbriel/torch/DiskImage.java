@@ -2,6 +2,7 @@ package net.umbriel.torch;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 public class DiskImage {
 
@@ -78,8 +79,36 @@ public class DiskImage {
 			directory.add(new DirectoryItem());
 		}
 		
+		//ArrayList of sectors and them add them to the map...
+		for (int t=0; t<80; t++) {
+			for (int side=0; side<2; side++) {
+				for (int s=0; s<10; s++) {
+					Sector sec = new Sector(t,side,s);
+					sectors.add(sec);
+					blockMap.put(sectors.indexOf(sec),sec);
+				}
+			}
+		}
+		
 	}
 	
+	public Sector getSector(int track, int side, int sector) {
+		return blockMap.get(sectorToBlock(track,side,sector));
+	}
+	
+	public Sector getSector(int blockNumber) {
+		return blockMap.get(blockNumber);
+	}
+	
+	private int sectorToBlock(int track, int side, int sector) {
+		return (track*32)+(side*16)+sector;
+	}
+	
+	public void dumpSectors() {
+		for (int i=0; i<sectors.size(); i++) {
+			System.out.println("Sector "+i+" block:"+Integer.toHexString(sectors.get(i).getBlockNumber()));
+		}
+	}
 	
 	
 }

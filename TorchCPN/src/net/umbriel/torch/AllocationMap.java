@@ -24,7 +24,7 @@ public class AllocationMap {
 	private void initialise() {
 		sectorAllocation = new ArrayList<Boolean>();
 		lookupBlockNumber = new Hashtable<Integer, Integer>(); //That's "index, blocknumber"
-		lookupIndexNumber = new Hashtable<Integer,Integer>();
+		lookupIndexNumber = new Hashtable<Integer,Integer>(); // or "blockNumber, Index"
 		//Set up blocks for hashtable...
 		int counter=0;
 		for (int t=0; t<80; t++) {

@@ -103,8 +103,8 @@ public class TestClass {
 				}
 	
 			}
-			AllocationMap map2 = new AllocationMap();
-			map2.displayMap();
+			DiskImage d = new DiskImage();
+			d.dumpSectors();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
