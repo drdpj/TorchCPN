@@ -5,19 +5,18 @@ import java.util.List;
 
 public class DirectoryItem {
 
-	Integer[] rawData = new Integer[16];
-	int blockAddress = 0;
-	boolean L2Block = false;
-	int highRecordNumber = 0;
-	int userNumber = 0;
-	String fileName = "";
-	String extension = "";
-	boolean[] attributes = new boolean[8]; //attribute bits
-	boolean readOnly = false;
-	boolean systemFile = false;
-	boolean archived = false;
-	int l2msb =0;
-	int l2lsb =0;
+	private Integer[] rawData = new Integer[Constants._WORD_SIZE];
+	private int blockAddress = 0;
+	private boolean L2Block = false;
+	private int highRecordNumber = 0;
+	private int userNumber = 0;
+	private String fileName = "";
+	private String extension = "";
+	private boolean[] attributes = new boolean[Constants._CPN_FILENAME_LENGTH]; //attribute bits
+	private boolean readOnly = false;
+	private boolean systemFile = false;
+	private boolean archived = false;
+
 
 	public DirectoryItem() {
 		
@@ -31,7 +30,7 @@ public class DirectoryItem {
 
 	public void printInfo() {
 		if (getBlockAddress()!=0) System.out.println(getFileName()+"."+getExtension()+" SB:"+
-				Integer.toHexString(getBlockAddress())+ " size(bytes):"+(getHighRecordNumber()*128) +" l2:"+isL2Block());
+				Integer.toHexString(getBlockAddress())+ " size(bytes):"+(getHighRecordNumber()*Constants._CPN_BLOCK_SIZE) +" l2:"+isL2Block());
 	}
 
 	/**
@@ -39,38 +38,38 @@ public class DirectoryItem {
 	 */
 	private void processBytes() {
 		//block address:
-		int lsb= this.getRawData()[0] & 0xFF;
-		int msb= this.getRawData()[1] & 0x7F;
-		this.setBlockAddress( (msb<< 8) + lsb);
+		int lsb= this.getRawData()[Constants._BLOCKADDR_LSB_INDEX] & Constants._0xFF_MASK;
+		int msb= this.getRawData()[Constants._BLOCKADDR_MSB_INDEX] & Constants._0x7F_MASK;
+		this.setBlockAddress( (msb<< Byte.SIZE) + lsb);
 
 		//L2 or L3?
-		setL2Block(((this.getRawData()[1] & 0x80)>>7)==1);
+		setL2Block(((this.getRawData()[1] & Constants._0x80_MASK)>>7)==1);
 
 		//high record
-		lsb=this.getRawData()[2] & 0xFF;
-		msb=this.getRawData()[3] & 0xFF;
-		this.setHighRecordNumber((msb<<8) +lsb);
+		lsb=this.getRawData()[2] & Constants._0xFF_MASK;
+		msb=this.getRawData()[3] & Constants._0xFF_MASK;
+		this.setHighRecordNumber((msb<<Byte.SIZE) +lsb);
 
 		//user number
-		this.setUserNumber(this.getRawData()[4]);
+		this.setUserNumber(this.getRawData()[Constants._USERNUMBER_INDEX]);
 
 		//Filename...
 		StringBuilder tempName = new StringBuilder();
-		for (int i=0; i<8; i++) {
-			tempName.append((char)(this.getRawData()[i+5] & 0x7F));
-			this.getAttributes()[i] = ((this.getRawData()[i+5] & 0x80)>>7)==1; //set the attributes
+		for (int i=0; i<Constants._CPN_FILENAME_LENGTH; i++) {
+			tempName.append((char)(this.getRawData()[i+Constants._FILENAME_INDEX] & Constants._0x7F_MASK));
+			this.getAttributes()[i] = ((this.getRawData()[i+Constants._FILENAME_INDEX] & Constants._0x80_MASK)>>7)==1; //set the attributes
 		}
 		this.setFileName(tempName.toString().trim());
 
 		//Extension...
 		tempName = new StringBuilder();
-		for (int i=0; i<3; i++) {
-			tempName.append((char)(this.getRawData()[i+0xD] & 0x7F));
+		for (int i=0; i<Constants._CPN_EXTENSION_LENGTH; i++) {
+			tempName.append((char)(this.getRawData()[i+Constants._EXTENSION_INDEX] & Constants._0x7F_MASK));
 		}
 		this.setExtension(tempName.toString());
-		this.setReadOnly(((this.getRawData()[0xD]&0x7F)>>7)==1);
-		this.setSystemFile(((this.getRawData()[0xE]&0x7F)>>7)==1);
-		this.setArchived(((this.getRawData()[0xF]&0x7F)>>7)==1);
+		this.setReadOnly(((this.getRawData()[Constants._EXTENSION_INDEX]&Constants._0x7F_MASK)>>7)==1);
+		this.setSystemFile(((this.getRawData()[Constants._EXTENSION_INDEX+1]&Constants._0x7F_MASK)>>7)==1);
+		this.setArchived(((this.getRawData()[Constants._EXTENSION_INDEX+2]&Constants._0x7F_MASK)>>7)==1);
 	}
 
 	public Integer[] getRawData() {

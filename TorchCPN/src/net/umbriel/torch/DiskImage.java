@@ -145,7 +145,15 @@ public class DiskImage {
 
 	}
 
-
+	public String[] getFileNames() {
+		ArrayList<String> fileNames = new ArrayList<String>();
+		for (DirectoryItem d: directory) {
+			if (d.getBlockAddress()!=0) {
+				fileNames.add(d.getFileName()+"."+d.getExtension());
+			}
+		}
+		return fileNames.toArray(new String[0]);
+	}
 
 	/**
 	 * Return a specific sector based on track, side and sector
@@ -167,8 +175,14 @@ public class DiskImage {
 		return blockMap.get(blockNumber);
 	}
 	
-	public File getFile(String filename) {
-		return null;
+	/**
+	 * Extract a file "filename" to "location"
+	 * @param filename
+	 * @param location
+	 */
+	public void extractFile(String filename, File location) {
+		//Get the right directory item...
+		
 	}
 
 	private int sectorToBlock(int track, int side, int sector) {
