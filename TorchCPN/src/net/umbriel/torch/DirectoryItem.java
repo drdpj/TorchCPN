@@ -29,8 +29,10 @@ public class DirectoryItem {
 
 
 	public void printInfo() {
-		if (getBlockAddress()!=0) System.out.println(getFileName()+"."+getExtension()+" SB:"+
-				Integer.toHexString(getBlockAddress())+ " size(bytes):"+(getHighRecordNumber()*Constants._CPN_BLOCK_SIZE) +" l2:"+isL2Block());
+		if (getBlockAddress()!=0) System.out.println(fileName+"."+extension+" SB:"+
+				Integer.toHexString(blockAddress)+ " size(bytes):"+
+				(highRecordNumber*Constants._CPN_BLOCK_SIZE) +" l2:"+L2Block+" "
+				+Integer.toBinaryString(rawData[Constants._BLOCKADDR_MSB_INDEX]));
 	}
 
 	/**
@@ -43,11 +45,11 @@ public class DirectoryItem {
 		this.setBlockAddress( (msb<< Byte.SIZE) + lsb);
 
 		//L2 or L3?
-		setL2Block(((this.getRawData()[1] & Constants._0x80_MASK)>>7)==1);
+		setL2Block(BitUtils.isBitSet(rawData[Constants._BLOCKADDR_MSB_INDEX],7));
 
 		//high record
-		lsb=this.getRawData()[2] & Constants._0xFF_MASK;
-		msb=this.getRawData()[3] & Constants._0xFF_MASK;
+		lsb=this.getRawData()[Constants._HIGHRECORD_LSB_INDEX] & Constants._0xFF_MASK;
+		msb=this.getRawData()[Constants._HIGHRECORD_MSB_INDEX] & Constants._0xFF_MASK;
 		this.setHighRecordNumber((msb<<Byte.SIZE) +lsb);
 
 		//user number
@@ -57,7 +59,7 @@ public class DirectoryItem {
 		StringBuilder tempName = new StringBuilder();
 		for (int i=0; i<Constants._CPN_FILENAME_LENGTH; i++) {
 			tempName.append((char)(this.getRawData()[i+Constants._FILENAME_INDEX] & Constants._0x7F_MASK));
-			this.getAttributes()[i] = ((this.getRawData()[i+Constants._FILENAME_INDEX] & Constants._0x80_MASK)>>7)==1; //set the attributes
+			this.getAttributes()[i] = BitUtils.isBitSet(this.getRawData()[i+Constants._FILENAME_INDEX],7); //set the attributes
 		}
 		this.setFileName(tempName.toString().trim());
 
@@ -67,9 +69,9 @@ public class DirectoryItem {
 			tempName.append((char)(this.getRawData()[i+Constants._EXTENSION_INDEX] & Constants._0x7F_MASK));
 		}
 		this.setExtension(tempName.toString());
-		this.setReadOnly(((this.getRawData()[Constants._EXTENSION_INDEX]&Constants._0x7F_MASK)>>7)==1);
-		this.setSystemFile(((this.getRawData()[Constants._EXTENSION_INDEX+1]&Constants._0x7F_MASK)>>7)==1);
-		this.setArchived(((this.getRawData()[Constants._EXTENSION_INDEX+2]&Constants._0x7F_MASK)>>7)==1);
+		this.setReadOnly(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX],7));
+		this.setSystemFile(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX+1],7));
+		this.setArchived(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX+2],7));
 	}
 
 	public Integer[] getRawData() {

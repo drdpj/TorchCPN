@@ -14,5 +14,8 @@ public class Constants {
 	static final int _0x7F_MASK = 0x7F;
 	static final int _0xFF_MASK = 0xFF;
 	static final int _WORD_SIZE = 16;
+	static final int _IS_L2_INDEX = 1;
+	static final int _HIGHRECORD_MSB_INDEX = 3;
+	static final int _HIGHRECORD_LSB_INDEX = 2;
 
 }

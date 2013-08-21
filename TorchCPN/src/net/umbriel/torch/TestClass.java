@@ -69,7 +69,9 @@ public class TestClass {
 			AllocationMap map = new AllocationMap(tempData.toArray(new Integer[0]));
 			map.displayMap();
 
+			System.out.println("isBitSet 255,7 "+BitUtils.isBitSet(255, 7));
 			//Let's try and extract all the files...
+			/*
 			iter2 = directory.iterator();
 			while (iter2.hasNext()) {
 				//get start block for starters.
@@ -102,9 +104,8 @@ public class TestClass {
 					}
 				}
 	
-			}
-			DiskImage d = new DiskImage();
-			d.dumpSectors();
+			}*/
+
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
