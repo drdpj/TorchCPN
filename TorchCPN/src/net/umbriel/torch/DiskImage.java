@@ -149,7 +149,7 @@ public class DiskImage {
 		ArrayList<String> fileNames = new ArrayList<String>();
 		for (DirectoryItem d: directory) {
 			if (d.getBlockAddress()!=0) {
-				fileNames.add(d.getFileName()+"."+d.getExtension());
+				fileNames.add(d.getFileName());
 			}
 		}
 		return fileNames.toArray(new String[0]);

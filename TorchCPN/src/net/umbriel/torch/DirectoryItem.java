@@ -7,7 +7,7 @@ public class DirectoryItem {
 
 	private Integer[] rawData = new Integer[Constants._WORD_SIZE];
 	private int blockAddress = 0;
-	private boolean L2Block = false;
+	private boolean l2Block = false;
 	private int highRecordNumber = 0;
 	private int userNumber = 0;
 	private String fileName = "";
@@ -31,7 +31,7 @@ public class DirectoryItem {
 	public void printInfo() {
 		if (getBlockAddress()!=0) System.out.println(fileName+"."+extension+" SB:"+
 				Integer.toHexString(blockAddress)+ " size(bytes):"+
-				(highRecordNumber*Constants._CPN_BLOCK_SIZE) +" l2:"+L2Block+" "
+				(highRecordNumber*Constants._CPN_BLOCK_SIZE) +" l2:"+l2Block+" "
 				+Integer.toBinaryString(rawData[Constants._BLOCKADDR_MSB_INDEX]));
 	}
 
@@ -40,40 +40,44 @@ public class DirectoryItem {
 	 */
 	private void processBytes() {
 		//block address:
-		int lsb= this.getRawData()[Constants._BLOCKADDR_LSB_INDEX] & Constants._0xFF_MASK;
-		int msb= this.getRawData()[Constants._BLOCKADDR_MSB_INDEX] & Constants._0x7F_MASK;
-		this.setBlockAddress( (msb<< Byte.SIZE) + lsb);
+		int lsb= rawData[Constants._BLOCKADDR_LSB_INDEX];
+		int msb = BitUtils.stripHighBit(rawData[Constants._BLOCKADDR_MSB_INDEX]);
+		blockAddress= (msb<< Byte.SIZE) + lsb;
 
 		//L2 or L3?
-		setL2Block(BitUtils.isBitSet(rawData[Constants._BLOCKADDR_MSB_INDEX],7));
+		l2Block=BitUtils.isHighBitSet(rawData[Constants._L2_BIT_INDEX]);
 
 		//high record
-		lsb=this.getRawData()[Constants._HIGHRECORD_LSB_INDEX] & Constants._0xFF_MASK;
-		msb=this.getRawData()[Constants._HIGHRECORD_MSB_INDEX] & Constants._0xFF_MASK;
-		this.setHighRecordNumber((msb<<Byte.SIZE) +lsb);
+		lsb=rawData[Constants._HIGHRECORD_LSB_INDEX];
+		msb=rawData[Constants._HIGHRECORD_MSB_INDEX];
+		highRecordNumber=(msb<<Byte.SIZE) +lsb;
 
 		//user number
-		this.setUserNumber(this.getRawData()[Constants._USERNUMBER_INDEX]);
+		userNumber=this.rawData[Constants._USERNUMBER_INDEX];
 
 		//Filename...
 		StringBuilder tempName = new StringBuilder();
 		for (int i=0; i<Constants._CPN_FILENAME_LENGTH; i++) {
-			tempName.append((char)(this.getRawData()[i+Constants._FILENAME_INDEX] & Constants._0x7F_MASK));
-			this.getAttributes()[i] = BitUtils.isBitSet(this.getRawData()[i+Constants._FILENAME_INDEX],7); //set the attributes
+			tempName.append((char)BitUtils.stripHighBit(rawData[i+Constants._FILENAME_INDEX]));
+			attributes[i] = BitUtils.isHighBitSet(rawData[i+Constants._FILENAME_INDEX]); //set the attributes
 		}
-		this.setFileName(tempName.toString().trim());
+		fileName=(tempName.toString());
 
 		//Extension...
 		tempName = new StringBuilder();
 		for (int i=0; i<Constants._CPN_EXTENSION_LENGTH; i++) {
-			tempName.append((char)(this.getRawData()[i+Constants._EXTENSION_INDEX] & Constants._0x7F_MASK));
+			tempName.append((char)BitUtils.stripHighBit(rawData[i+Constants._EXTENSION_INDEX]));
 		}
-		this.setExtension(tempName.toString());
-		this.setReadOnly(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX],7));
-		this.setSystemFile(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX+1],7));
-		this.setArchived(BitUtils.isBitSet(this.getRawData()[Constants._EXTENSION_INDEX+2],7));
+		extension=tempName.toString();
+		readOnly=BitUtils.isHighBitSet(rawData[Constants._READONLY_BIT_INDEX]);
+		systemFile=BitUtils.isHighBitSet(rawData[Constants._SYSTEM_BIT_INDEX]);
+		archived=BitUtils.isHighBitSet(rawData[Constants._ARCHIVE_BIT_INDEX]);
 	}
 
+	public String getFileName() {
+		return (fileName.trim()+extension.trim());
+	}
+	
 	public Integer[] getRawData() {
 		return rawData;
 	}
@@ -89,10 +93,10 @@ public class DirectoryItem {
 		this.blockAddress = blockAddress;
 	}
 	public boolean isL2Block() {
-		return L2Block;
+		return l2Block;
 	}
 	public void setL2Block(boolean l2Block) {
-		L2Block = l2Block;
+		l2Block = l2Block;
 	}
 	public int getHighRecordNumber() {
 		return highRecordNumber;
@@ -106,16 +110,16 @@ public class DirectoryItem {
 	public void setUserNumber(int userNumber) {
 		this.userNumber = userNumber;
 	}
-	public String getFileName() {
+	public String getRawFileName() {
 		return fileName;
 	}
-	public void setFileName(String fileName) {
+	public void setRawFileName(String fileName) {
 		this.fileName = fileName;
 	}
-	public String getExtension() {
+	public String getRawExtension() {
 		return extension;
 	}
-	public void setExtension(String extension) {
+	public void setRawExtension(String extension) {
 		this.extension = extension;
 	}
 	public boolean[] getAttributes() {
