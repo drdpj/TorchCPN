@@ -60,7 +60,7 @@ public class DirectoryItem {
 			tempName.append((char)(this.getRawData()[i+5] & 0x7F));
 			this.getAttributes()[i] = ((this.getRawData()[i+5] & 0x80)>>7)==1; //set the attributes
 		}
-		this.setFileName(tempName.toString());
+		this.setFileName(tempName.toString().trim());
 
 		//Extension...
 		tempName = new StringBuilder();
@@ -140,6 +140,10 @@ public class DirectoryItem {
 	}
 	public void setArchived(boolean archived) {
 		this.archived = archived;
+	}
+	
+	private void updateRawData() {
+		
 	}
 
 
