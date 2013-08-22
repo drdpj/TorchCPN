@@ -65,7 +65,36 @@ public class AllocationMap {
 		while (sectorAllocation.get(i)) {
 			i++;
 		}
-		return i;
+		return lookupBlockNumber.get(i);
+	}
+	
+	
+	/**
+	 * Allocate multiple sectors.
+	 * @param sectors
+	 */
+	public void allocateSectors(Integer[] sectors) {
+		for (int i=0; i<sectors.length;i++) {
+			allocateSector(sectors[i]);
+		}
+	}
+	
+	/**
+	 * get a list of n free sectors.
+	 * @param n
+	 * @return
+	 */
+	public Integer[] getFreeSectors(Integer n) {
+		Integer[] sectorList = new Integer[n];
+		int sectorCount =0;
+		for (int i=0; i<sectorAllocation.size();i++) {
+			if (sectorCount==n) break;
+			if (!sectorAllocation.get(i)) {
+				sectorList[sectorCount]=lookupBlockNumber.get(i);
+				sectorCount++;
+			}
+		}
+		return sectorList;
 	}
 
 	public AllocationMap() {
@@ -145,7 +174,7 @@ public class AllocationMap {
 		return rawMap;
 	}
 	
-	public Integer getFreeSectors() {
+	public Integer getFreeSectorCount() {
 		return freeSectors;
 	}
 

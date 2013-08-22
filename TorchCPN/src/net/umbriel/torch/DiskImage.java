@@ -2,6 +2,7 @@ package net.umbriel.torch;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -114,16 +115,11 @@ public class DiskImage {
 			}
 
 		}
-		
+
 		directoryHash = new Hashtable<String,DirectoryItem>();
 		numberOfFiles = 0; //Also count the number of files here...
-		for (DirectoryItem d: directory) {
-			if (d.getBlockAddress()!=0) {
-				directoryHash.put(d.getFileName(), d);
-				numberOfFiles++;
-			}
-		}
-		
+		updateNumberOfFiles();
+
 		//Extract AllocationMap
 		ArrayList<Integer> tempData = new ArrayList<Integer>();
 		for (int i=Constants._ALLOCATION_MAP_SECTOR; 
@@ -142,6 +138,7 @@ public class DiskImage {
 		sectors = new ArrayList<Sector>();
 		directory = new ArrayList<DirectoryItem>();
 		blockMap = new Hashtable<Integer,Sector>();
+		numberOfFiles=0;
 
 		//Populate directory with empty items
 		for (int i=0; i<Constants._DIRECTORY_SIZE; i++) {
@@ -190,7 +187,7 @@ public class DiskImage {
 	public Sector getSector(int blockNumber) {
 		return blockMap.get(blockNumber);
 	}
-	
+
 	/**
 	 * Extract a file "filename" to "location"
 	 * @param filename
@@ -207,11 +204,11 @@ public class DiskImage {
 			//Get the blocks...
 			ArrayList<DataBlockInfo> blocks = new ArrayList<DataBlockInfo>();
 
-			
+
 			if (d.isL2Block()) { 			//Is this an L2 block?
 				//Get the list of l3 blocks
 				Integer[] l3list = sectorToWords(blockMap.get(d.getBlockAddress()).getData()); //
-				
+
 				//Add the l3 blocks to the list of what to get...
 				for (int i=0; i<l3list.length;i++) {
 					blocks.addAll(processL3Block(blockMap.get(l3list[i]).getData()));
@@ -232,7 +229,78 @@ public class DiskImage {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
+	}
+
+	public void addFile (File f, Integer user) {
+		int fileSize = (int) f.length();
+		int sectorSize = requiredSectors(fileSize);
+		//Do we have enough space?
+		if (sectorSize>map.getFreeSectorCount()) {
+			System.out.println("Not enough space for "+f.getName());
+		} else {
+			DirectoryItem d = directory.get(numberOfFiles); //get the next free directory item
+			d.setRawFileName(f.getName().substring(0, f.getName().indexOf('.')).toUpperCase());
+			d.setRawExtension(f.getName().substring(f.getName().indexOf('.')+1).toUpperCase());
+			Integer[] allocatedSectors = map.getFreeSectors(sectorSize);
+			//First sector will be L2 or L3.
+			if (((fileSize+Constants._SECTOR_SIZE-1)/Constants._SECTOR_SIZE)>Constants._BLOCK_SIZE) {
+				//First sector is L2...
+			} else {
+				try {
+					//First sector is L3...
+					d.setBlockAddress(allocatedSectors[0]);
+					Sector l3Block = blockMap.get(allocatedSectors[0]);
+					ArrayList<DataBlockInfo> blockInfo= new ArrayList<DataBlockInfo>();
+
+					FileInputStream fis = new FileInputStream(f);
+					for (int i=1; i<allocatedSectors.length;i++) { //for each of my empty sectors
+						Sector currentSector = blockMap.get(allocatedSectors[i]);
+						ArrayList<Integer> currentData = new ArrayList<Integer>();
+						for (int j=0; i<Constants._SECTOR_SIZE; j++) {
+							int dataByte = fis.read();
+							if (dataByte>-1) {
+								currentData.add(dataByte);
+							} else {
+								break;
+							}
+						}
+						currentSector.setData(currentData);
+						int blocksUsed = DataBlockInfo.FIRST;
+						if (currentData.size()>128) {
+							blocksUsed= DataBlockInfo.BOTH;
+						}
+						if (currentData.size() < Constants._SECTOR_SIZE) {
+							for (int j=currentData.size(); j<Constants._SECTOR_SIZE; j++) {
+								currentData.add(0);
+							}
+						}
+						blockInfo.add(new DataBlockInfo(currentSector.getBlockNumber(),blocksUsed));
+					}
+					//Sort out the L3 block
+					ArrayList<Integer> currentData = new ArrayList<Integer>();
+					for (int i=0;i<blockInfo.size();i++) {
+
+						int block = blockInfo.get(i).getBlock();
+						int msb = (block>>8) & Constants._0xFF_MASK;
+						int lsb = block & Constants._0xFF_MASK;
+						if (blockInfo.get(i).getAllocation()==DataBlockInfo.BOTH) {
+							msb = msb | Constants._0xC0_MASK;
+						}
+						currentData.add(lsb);
+						currentData.add(msb);
+					}
+					for (int i=currentData.size();i<Constants._SECTOR_SIZE; i++) { //pad it
+						currentData.add(0);
+					}
+					l3Block.setData(currentData);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}
 	}
 
 	/**
@@ -253,7 +321,7 @@ public class DiskImage {
 		}
 		return processed.toArray(new Integer[0]);
 	}
-	
+
 	private ArrayList<DataBlockInfo> processL3Block(ArrayList<Integer> l3) {
 		ArrayList<DataBlockInfo> db = new ArrayList<DataBlockInfo>();
 		for (int i=0; i<l3.size();i+=2) {
@@ -266,7 +334,7 @@ public class DiskImage {
 			}
 		}
 		return db;
-		
+
 	}
 
 	/**
@@ -286,7 +354,7 @@ public class DiskImage {
 			return required+l3+l2;
 		}
 	}
-	
+
 	private int sectorToBlock(int track, int side, int sector) {
 		return (track*32)+(side*16)+sector; //Can't be mithered to do the maths to de-magic these numbers...
 	}
@@ -299,7 +367,20 @@ public class DiskImage {
 			System.out.println("Sector "+i+" block:"+Integer.toHexString(sectors.get(i).getBlockNumber()));
 		}
 	}
-	
+
+	/**
+	 * 
+	 */
+	private void updateNumberOfFiles() {
+		numberOfFiles=0;
+		for (DirectoryItem d: directory) {
+			if (d.getBlockAddress()!=0) {
+				directoryHash.put(d.getFileName(), d);
+				numberOfFiles++;
+			}
+		}
+	}
+
 	/**
 	 * Display map on stdout
 	 */

@@ -110,7 +110,8 @@ public class TestClass {
 	
 			}
 			System.out.println("for 44672 bytes you need "+DiskImage.requiredSectors(44672)); 
-			
+			DiskImage image = new DiskImage();
+			image.addFile(new File("TYPETHIS.DOC"), 0);
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
