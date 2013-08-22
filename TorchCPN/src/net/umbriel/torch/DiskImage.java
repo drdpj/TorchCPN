@@ -108,7 +108,7 @@ public class DiskImage {
 			Sector currentSector = sectors.get(i);
 			//Directory entries are 16 bytes..., there are two sectors of Directory entries..
 			for (int j=0; j<Constants._SECTOR_SIZE; j+=Constants._WORD_SIZE) {
-				directory.add(new DirectoryItem((currentSector.getData().subList(j, j+16))));
+				directory.add(new DirectoryItem((currentSector.getData().subList(j, j+Constants._WORD_SIZE))));
 			}
 
 		}
@@ -122,7 +122,8 @@ public class DiskImage {
 		
 		//Extract AllocationMap
 		ArrayList<Integer> tempData = new ArrayList<Integer>();
-		for (int i=16; i<18; i++) {
+		for (int i=Constants._ALLOCATION_MAP_SECTOR; 
+				i<Constants._ALLOCATION_MAP_SECTOR+Constants._ALLOCATION_MAP_SIZE; i++) {
 			tempData.addAll(sectors.get(i).getData());
 		}
 		map = new AllocationMap(tempData.toArray(new Integer[0]));
@@ -139,14 +140,14 @@ public class DiskImage {
 		blockMap = new Hashtable<Integer,Sector>();
 
 		//Populate directory with empty items
-		for (int i=0; i<256; i++) {
+		for (int i=0; i<Constants._DIRECTORY_SIZE; i++) {
 			directory.add(new DirectoryItem());
 		}
 
 		//ArrayList of sectors and them add them to the map...
-		for (int t=0; t<80; t++) {
-			for (int side=0; side<2; side++) {
-				for (int s=0; s<10; s++) {
+		for (int t=0; t<Constants._TRACKS; t++) {
+			for (int side=0; side<Constants._SIDES; side++) {
+				for (int s=0; s<Constants._SECTORS; s++) {
 					Sector sec = new Sector(t,side,s);
 					sectors.add(sec);
 					blockMap.put(sectors.indexOf(sec),sec);
@@ -215,7 +216,7 @@ public class DiskImage {
 			}
 			for (DataBlockInfo dbi: blocks) {
 				Integer[] outData =blockMap.get(dbi.getBlock()).getData().toArray(new Integer[0]);
-				for (int i=0; i<dbi.getAllocation()*128;i++) {
+				for (int i=0; i<dbi.getAllocation()*Constants._BLOCK_SIZE;i++) {
 					fos.write(outData[i]);
 				}
 			}
@@ -252,8 +253,8 @@ public class DiskImage {
 		for (int i=0; i<l3.size();i+=2) {
 			int msb=l3.get(i+1);
 			int lsb=l3.get(i);
-			int allocation =((msb & 0xC0)>>6);
-			int value=((msb & 0x3F)<<8)+lsb;
+			int allocation =((msb & Constants._0xC0_MASK)>>Constants._6_BITS);
+			int value=((msb & Constants._0x3F_MASK)<<Byte.SIZE)+lsb;
 			if (value !=0) {
 				db.add(new DataBlockInfo(value,allocation));
 			}
@@ -264,7 +265,7 @@ public class DiskImage {
 
 	
 	private int sectorToBlock(int track, int side, int sector) {
-		return (track*32)+(side*16)+sector;
+		return (track*32)+(side*16)+sector; //Can't be mithered to do the maths to de-magic these numbers...
 	}
 
 	/**

@@ -2,6 +2,8 @@ package net.umbriel.torch;
 
 public class Constants {
 
+	static final int _ALLOCATION_MAP_SECTOR = 16;
+	static final int _ALLOCATION_MAP_SIZE = 2;
 	static final int _TRACKS = 80;
 	static final int _SECTORS = 10;
 	static final int _SIDES = 2;
@@ -27,5 +29,9 @@ public class Constants {
 	static final int _HIGHRECORD_MSB_INDEX = 3;
 	static final int _HIGHRECORD_LSB_INDEX = 2;
 	static final int _NUMBER_OF_DIRECTORY_SECTORS = 16;
+	static final int _DIRECTORY_SIZE = 256;
+	static final int _6_BITS = 6;
+	static final int _0xC0_MASK = 0xC0;
+	static final int _0x3F_MASK = 0x3F;
 
 }

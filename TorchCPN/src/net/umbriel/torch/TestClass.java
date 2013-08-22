@@ -98,8 +98,8 @@ public class TestClass {
 						for (int i=0; i< tempSector.getData().size();i+=2) {
 							int lsb=tempSector.getData().get(i);
 							int msb=tempSector.getData().get(i+1);
-							int data = ((msb & 0x3F)<<8)+lsb;
-							int flags = ((msb & 0xC0)>>6);
+							int data = ((msb & Constants._0x3F_MASK)<<Byte.SIZE)+lsb;
+							int flags = ((msb & Constants._0xC0_MASK)>>Constants._6_BITS);
 							if (data!=0) {
 								System.out.println("Data at:"+Integer.toHexString(data)+" "+
 										Integer.toBinaryString(flags));
