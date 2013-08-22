@@ -95,9 +95,7 @@ public class DirectoryItem {
 	public boolean isL2Block() {
 		return l2Block;
 	}
-	public void setL2Block(boolean l2Block) {
-		l2Block = l2Block;
-	}
+
 	public int getHighRecordNumber() {
 		return highRecordNumber;
 	}
@@ -147,9 +145,7 @@ public class DirectoryItem {
 		this.archived = archived;
 	}
 	
-	private void updateRawData() {
-		
-	}
+
 
 
 

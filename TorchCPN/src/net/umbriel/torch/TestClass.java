@@ -1,5 +1,6 @@
 package net.umbriel.torch;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,6 +23,9 @@ public class TestClass {
 		//Open an interleaved DSD image and read it into a series of sectors...
 		try {
 			FileInputStream fis = new FileInputStream("disk.dsd");
+			File test = new File("../");
+			
+			System.out.println(test.isDirectory()+" "+test.getCanonicalPath());
 			//80 tracks, 10 sectors/track
 			for (int track = 0; track <80; track ++) {
 				for (int side = 0; side <2; side ++) {

@@ -26,5 +26,6 @@ public class Constants {
 	static final int _IS_L2_INDEX = 1;
 	static final int _HIGHRECORD_MSB_INDEX = 3;
 	static final int _HIGHRECORD_LSB_INDEX = 2;
+	static final int _NUMBER_OF_DIRECTORY_SECTORS = 16;
 
 }

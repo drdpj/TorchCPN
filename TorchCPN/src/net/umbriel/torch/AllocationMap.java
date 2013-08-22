@@ -66,9 +66,6 @@ public class AllocationMap {
 	}
 
 
-	private void generateRaw() {
-
-	}
 
 	private void processData() {
 		for (int i=0; i<rawMap.length; i++) {

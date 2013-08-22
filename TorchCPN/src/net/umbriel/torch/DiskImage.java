@@ -2,10 +2,11 @@ package net.umbriel.torch;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
+
 
 public class DiskImage {
 
@@ -70,6 +71,7 @@ public class DiskImage {
 	private AllocationMap map;
 	private ArrayList<Sector> sectors;
 	private Hashtable<Integer, Sector> blockMap;
+	private Hashtable<String, DirectoryItem> directoryHash;
 
 	/**
 	 * Build the disk image from file F
@@ -80,12 +82,12 @@ public class DiskImage {
 		try {
 			FileInputStream fis = new FileInputStream(f);
 			//80 tracks, 10 sectors/track
-			for (int track = 0; track <80; track ++) {
-				for (int side = 0; side <2; side ++) {
-					for (int sector =0; sector <10; sector ++) {
+			for (int track = 0; track <Constants._TRACKS; track ++) {
+				for (int side = 0; side <Constants._SIDES; side ++) {
+					for (int sector =0; sector <Constants._SECTORS; sector ++) {
 						Sector currentSector = new Sector(track, side, sector);
 						ArrayList<Integer> data = new ArrayList<Integer>();
-						for (int bytecount=0; bytecount<256; bytecount++) {
+						for (int bytecount=0; bytecount<Constants._SECTOR_SIZE; bytecount++) {
 							data.add(fis.read());
 						}
 						currentSector.setData(data);
@@ -100,13 +102,20 @@ public class DiskImage {
 		}
 		//Extract Directory
 		directory = new ArrayList<DirectoryItem>();
-		for (int i=0; i<16; i++) {
+		for (int i=0; i<Constants._NUMBER_OF_DIRECTORY_SECTORS; i++) {
 			Sector currentSector = sectors.get(i);
-			//Directory entries are 16 bytes...
-			for (int j=0; j<256; j+=16) {
+			//Directory entries are 16 bytes..., there are two sectors of Directory entries..
+			for (int j=0; j<Constants._SECTOR_SIZE; j+=Constants._WORD_SIZE) {
 				directory.add(new DirectoryItem((currentSector.getData().subList(j, j+16))));
 			}
 
+		}
+		directoryHash = new Hashtable<String,DirectoryItem>();
+		
+		for (DirectoryItem d: directory) {
+			if (d.getBlockAddress()!=0) {
+				directoryHash.put(d.getFileName(), d);
+			}
 		}
 		
 		//Extract AllocationMap
@@ -181,7 +190,24 @@ public class DiskImage {
 	 * @param location
 	 */
 	public void extractFile(String filename, File location) {
-		//Get the right directory item...
+		DirectoryItem d = directoryHash.get(filename);
+		try {
+			//Here's the outfile...
+			File outFile = new File(location.getCanonicalPath()+"/"+filename);
+			FileOutputStream fos = new FileOutputStream(outFile);
+			ArrayList<Integer> l3Blocks = new ArrayList<Integer>();
+			
+			//Get the blocks into l3Blocks...
+			if (d.isL2Block()) { 			//Is this an L2 block?
+				
+			} else {
+				
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 
