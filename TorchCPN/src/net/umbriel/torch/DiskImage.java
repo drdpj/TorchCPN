@@ -72,6 +72,8 @@ public class DiskImage {
 	private ArrayList<Sector> sectors;
 	private Hashtable<Integer, Sector> blockMap;
 	private Hashtable<String, DirectoryItem> directoryHash;
+	private Integer numberOfFiles;
+	private Integer firstFreeSector;
 
 	/**
 	 * Build the disk image from file F
@@ -112,11 +114,13 @@ public class DiskImage {
 			}
 
 		}
-		directoryHash = new Hashtable<String,DirectoryItem>();
 		
+		directoryHash = new Hashtable<String,DirectoryItem>();
+		numberOfFiles = 0; //Also count the number of files here...
 		for (DirectoryItem d: directory) {
 			if (d.getBlockAddress()!=0) {
 				directoryHash.put(d.getFileName(), d);
+				numberOfFiles++;
 			}
 		}
 		
@@ -127,7 +131,7 @@ public class DiskImage {
 			tempData.addAll(sectors.get(i).getData());
 		}
 		map = new AllocationMap(tempData.toArray(new Integer[0]));
-		
+		firstFreeSector = map.getFirstFreeSector();
 	}
 
 	/**
@@ -208,15 +212,18 @@ public class DiskImage {
 				//Get the list of l3 blocks
 				Integer[] l3list = sectorToWords(blockMap.get(d.getBlockAddress()).getData()); //
 				
+				//Add the l3 blocks to the list of what to get...
 				for (int i=0; i<l3list.length;i++) {
 					blocks.addAll(processL3Block(blockMap.get(l3list[i]).getData()));
 				}
 			} else {
+				//Get the list of what to get
 				blocks.addAll(processL3Block(blockMap.get(d.getBlockAddress()).getData()));;			
 			}
 			for (DataBlockInfo dbi: blocks) {
 				Integer[] outData =blockMap.get(dbi.getBlock()).getData().toArray(new Integer[0]);
-				for (int i=0; i<dbi.getAllocation()*Constants._BLOCK_SIZE;i++) {
+				// Depending on allocation for that sector write out either 128 or 256 bytes.
+				for (int i=0; i<dbi.getAllocation()*Constants._BLOCK_SIZE;i++) { 
 					fos.write(outData[i]);
 				}
 			}
@@ -229,9 +236,8 @@ public class DiskImage {
 	}
 
 	/**
-	 * Convert bytes to words, only strip bits 14/15 if strip is true
+	 * Convert bytes to words
 	 * @param d
-	 * @param strip
 	 * @return
 	 */
 	private Integer[] sectorToWords(ArrayList<Integer> d) {

@@ -52,6 +52,14 @@ public class AllocationMap {
 		return sectorAllocation.get(lookupIndexNumber.get(block));
 	}
 
+	public Integer getFirstFreeSector() {
+		int i=0;
+		while (sectorAllocation.get(i)) {
+			i++;
+		}
+		return i;
+	}
+	
 	public AllocationMap() {
 		//Empty map...
 		rawMap = new Integer[512];
@@ -99,6 +107,10 @@ public class AllocationMap {
 			System.out.println();
 		}
 
+	}
+	
+	private void updateRawMap() {
+		
 	}
 
 
