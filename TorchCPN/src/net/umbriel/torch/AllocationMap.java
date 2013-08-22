@@ -1,6 +1,7 @@
 package net.umbriel.torch;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Hashtable;
 
 /**
@@ -20,16 +21,16 @@ public class AllocationMap {
 		rawMap = rawData;
 		initialise();
 	}
-	
+
 	private void initialise() {
 		sectorAllocation = new ArrayList<Boolean>();
 		lookupBlockNumber = new Hashtable<Integer, Integer>(); //That's "index, blocknumber"
 		lookupIndexNumber = new Hashtable<Integer,Integer>(); // or "blockNumber, Index"
 		//Set up blocks for hashtable...
 		int counter=0;
-		for (int t=0; t<80; t++) {
-			for (int s=0; s<2; s++) {
-				for (int sec=0; sec<16; sec++) {
+		for (int t=0; t<Constants._TRACKS; t++) {
+			for (int s=0; s<Constants._SIDES; s++) {
+				for (int sec=0; sec<Constants._WORD_SIZE; sec++) {
 					int block=(t*32)+(s*16)+sec;
 					lookupBlockNumber.put(counter, block);
 					lookupIndexNumber.put(block, counter);
@@ -42,10 +43,12 @@ public class AllocationMap {
 
 	public void allocateSector(int block) {
 		sectorAllocation.set(lookupIndexNumber.get(block), true);
+		updateRawMap();
 	}
 
 	public void deAllocateSector(int block) {
 		sectorAllocation.set(lookupIndexNumber.get(block), false);
+		updateRawMap();
 	}
 
 	public Boolean isAllocated(int block) {
@@ -59,7 +62,7 @@ public class AllocationMap {
 		}
 		return i;
 	}
-	
+
 	public AllocationMap() {
 		//Empty map...
 		rawMap = new Integer[512];
@@ -108,9 +111,23 @@ public class AllocationMap {
 		}
 
 	}
-	
+
 	private void updateRawMap() {
-		
+		for (int i=0; i<rawMap.length;i++) {
+			BitSet set = new BitSet();
+			for (int j=0; j<Byte.SIZE;j++) {
+				set.set(j, sectorAllocation.get((i*Byte.SIZE)+j));
+			}
+			if (set.length()>0) {
+				rawMap[i]=(int)set.toLongArray()[0];
+			} else {
+				rawMap[i]=0;
+			}
+		}
+	}
+	
+	public Integer[] getRawMap() {
+		return rawMap;
 	}
 
 

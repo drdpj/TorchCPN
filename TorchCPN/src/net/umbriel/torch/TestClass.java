@@ -109,9 +109,16 @@ public class TestClass {
 				}
 	
 			}
-			DiskImage disk = new DiskImage(new File("./disk.dsd"));
-			disk.extractFile("DEMO.TXT", new File("."));
-			disk.extractFile("TYPETHIS.DOC", new File("."));
+			AllocationMap map2 = new AllocationMap();
+			map2.displayMap();
+			int free = map2.getFirstFreeSector();
+			map2.allocateSector(free);
+			map2.displayMap();
+			System.out.println("pause");
+			Integer[] rawData =map2.getRawMap();
+			map2=new AllocationMap(rawData);
+			map2.displayMap();
+			
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
