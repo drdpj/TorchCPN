@@ -75,7 +75,7 @@ public class DirectoryItem {
 	}
 
 	public String getFileName() {
-		return (fileName.trim()+extension.trim());
+		return (fileName.trim()+"."+extension.trim());
 	}
 	
 	public Integer[] getRawData() {

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 
 
@@ -78,6 +79,8 @@ public class DiskImage {
 	 * @param f
 	 */
 	public DiskImage(File f) {
+		sectors = new ArrayList<Sector>();
+		blockMap = new Hashtable<Integer,Sector>();
 		// Load the image, store sectors and put them in the hash
 		try {
 			FileInputStream fis = new FileInputStream(f);
@@ -92,7 +95,7 @@ public class DiskImage {
 						}
 						currentSector.setData(data);
 						sectors.add(currentSector);
-						blockMap.put(sectors.indexOf(currentSector),currentSector);
+						blockMap.put(currentSector.getBlockNumber(),currentSector);
 					}
 				}
 			}
@@ -194,16 +197,30 @@ public class DiskImage {
 		try {
 			//Here's the outfile...
 			File outFile = new File(location.getCanonicalPath()+"/"+filename);
+			//Need to put this somewhere...
 			FileOutputStream fos = new FileOutputStream(outFile);
-			ArrayList<Integer> l3Blocks = new ArrayList<Integer>();
+
+			//Get the blocks...
+			ArrayList<DataBlockInfo> blocks = new ArrayList<DataBlockInfo>();
+
 			
-			//Get the blocks into l3Blocks...
 			if (d.isL2Block()) { 			//Is this an L2 block?
+				//Get the list of l3 blocks
+				Integer[] l3list = sectorToWords(blockMap.get(d.getBlockAddress()).getData()); //
 				
+				for (int i=0; i<l3list.length;i++) {
+					blocks.addAll(processL3Block(blockMap.get(l3list[i]).getData()));
+				}
 			} else {
-				
+				blocks.addAll(processL3Block(blockMap.get(d.getBlockAddress()).getData()));;			
 			}
-			
+			for (DataBlockInfo dbi: blocks) {
+				Integer[] outData =blockMap.get(dbi.getBlock()).getData().toArray(new Integer[0]);
+				for (int i=0; i<dbi.getAllocation()*128;i++) {
+					fos.write(outData[i]);
+				}
+			}
+			fos.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -211,6 +228,42 @@ public class DiskImage {
 		
 	}
 
+	/**
+	 * Convert bytes to words, only strip bits 14/15 if strip is true
+	 * @param d
+	 * @param strip
+	 * @return
+	 */
+	private Integer[] sectorToWords(ArrayList<Integer> d) {
+		ArrayList<Integer> processed = new ArrayList<Integer>();
+		for (int i=0; i<d.size();i+=2) {
+			int msb=d.get(i+1);
+			int lsb=d.get(i);
+
+			int value=(msb<<Byte.SIZE)+lsb;
+			if (value !=0) {
+				processed.add(value);
+			}
+		}
+		return processed.toArray(new Integer[0]);
+	}
+	
+	private ArrayList<DataBlockInfo> processL3Block(ArrayList<Integer> l3) {
+		ArrayList<DataBlockInfo> db = new ArrayList<DataBlockInfo>();
+		for (int i=0; i<l3.size();i+=2) {
+			int msb=l3.get(i+1);
+			int lsb=l3.get(i);
+			int allocation =((msb & 0xC0)>>6);
+			int value=((msb & 0x3F)<<8)+lsb;
+			if (value !=0) {
+				db.add(new DataBlockInfo(value,allocation));
+			}
+		}
+		return db;
+		
+	}
+
+	
 	private int sectorToBlock(int track, int side, int sector) {
 		return (track*32)+(side*16)+sector;
 	}

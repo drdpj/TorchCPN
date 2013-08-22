@@ -4,7 +4,7 @@ public class Constants {
 
 	static final int _TRACKS = 80;
 	static final int _SECTORS = 10;
-	static final int _SIDES = 0;
+	static final int _SIDES = 2;
 	static final int _SECTOR_SIZE = 256;
 	static final int _BLOCK_SIZE = 128;
 	static final int _CPN_FILENAME_LENGTH = 8;

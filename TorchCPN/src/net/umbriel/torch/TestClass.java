@@ -75,14 +75,14 @@ public class TestClass {
 
 			System.out.println("isBitSet 255,7 "+BitUtils.isBitSet(255, 7));
 			//Let's try and extract all the files...
-			/*
+			
 			iter2 = directory.iterator();
 			while (iter2.hasNext()) {
 				//get start block for starters.
 				DirectoryItem temp = iter2.next();
 				if (temp.getBlockAddress()!=0) {
 					if (temp.isL2Block()) {
-						System.out.println(temp.getFileName()+"."+temp.getExtension()+" L2:");
+						System.out.println(temp.getRawFileName()+"."+temp.getRawExtension()+" L2:");
 						Sector tempSector = diskHash.get(temp.getBlockAddress());
 						for (int i=0; i< tempSector.getData().size(); i+=2) {
 							int lsb=tempSector.getData().get(i);
@@ -93,7 +93,7 @@ public class TestClass {
 							}
 						}
 					} else {
-						System.out.println(temp.getFileName()+"."+temp.getExtension()+" L3:");
+						System.out.println(temp.getRawFileName()+"."+temp.getRawExtension()+" L3:");
 						Sector tempSector = diskHash.get(temp.getBlockAddress());
 						for (int i=0; i< tempSector.getData().size();i+=2) {
 							int lsb=tempSector.getData().get(i);
@@ -108,7 +108,10 @@ public class TestClass {
 					}
 				}
 	
-			}*/
+			}
+			DiskImage disk = new DiskImage(new File("./disk.dsd"));
+			disk.extractFile("DEMO.TXT", new File("."));
+			disk.extractFile("TYPETHIS.DOC", new File("."));
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
