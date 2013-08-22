@@ -109,15 +109,7 @@ public class TestClass {
 				}
 	
 			}
-			AllocationMap map2 = new AllocationMap();
-			map2.displayMap();
-			int free = map2.getFirstFreeSector();
-			map2.allocateSector(free);
-			map2.displayMap();
-			System.out.println("pause");
-			Integer[] rawData =map2.getRawMap();
-			map2=new AllocationMap(rawData);
-			map2.displayMap();
+			System.out.println("for 44672 bytes you need "+DiskImage.requiredSectors(44672)); 
 			
 
 		} catch (FileNotFoundException e) {

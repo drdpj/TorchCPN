@@ -16,6 +16,7 @@ public class AllocationMap {
 	private Hashtable<Integer, Integer> lookupBlockNumber;
 	private Hashtable<Integer, Integer> lookupIndexNumber;
 	private ArrayList<Boolean> sectorAllocation;
+	private Integer freeSectors;
 
 	public AllocationMap(Integer[] rawData) {
 		rawMap = rawData;
@@ -23,6 +24,7 @@ public class AllocationMap {
 	}
 
 	private void initialise() {
+		freeSectors =0;
 		sectorAllocation = new ArrayList<Boolean>();
 		lookupBlockNumber = new Hashtable<Integer, Integer>(); //That's "index, blocknumber"
 		lookupIndexNumber = new Hashtable<Integer,Integer>(); // or "blockNumber, Index"
@@ -39,16 +41,19 @@ public class AllocationMap {
 			}
 		}
 		processData();
+		updateFreeSpace();
 	}
 
 	public void allocateSector(int block) {
 		sectorAllocation.set(lookupIndexNumber.get(block), true);
 		updateRawMap();
+		updateFreeSpace();
 	}
 
 	public void deAllocateSector(int block) {
 		sectorAllocation.set(lookupIndexNumber.get(block), false);
 		updateRawMap();
+		updateFreeSpace();
 	}
 
 	public Boolean isAllocated(int block) {
@@ -126,8 +131,22 @@ public class AllocationMap {
 		}
 	}
 	
+	private void updateFreeSpace() {
+		freeSectors=0;
+		for (Boolean b: sectorAllocation) {
+
+			if (!b) {
+				freeSectors++;
+			}
+		}
+	}
+	
 	public Integer[] getRawMap() {
 		return rawMap;
+	}
+	
+	public Integer getFreeSectors() {
+		return freeSectors;
 	}
 
 

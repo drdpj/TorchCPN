@@ -269,6 +269,23 @@ public class DiskImage {
 		
 	}
 
+	/**
+	 * Returns number of sectors required for a particular file.
+	 * @param fileSize in bytes
+	 * @return
+	 */
+	public static int requiredSectors(Integer fileSize) {
+		int required = (fileSize+Constants._SECTOR_SIZE-1)/Constants._SECTOR_SIZE;
+		if (required<=128) {
+			//we can use a single L3 block (that's required data+1)
+			return required++;
+		}  else {
+			//Calc no. L2 blocks required:
+			int l3 = (required+Constants._BLOCK_SIZE-1)/Constants._BLOCK_SIZE; //One L3 per 128 sectors...
+			int l2 = (l3+Constants._BLOCK_SIZE-1)/Constants._BLOCK_SIZE; //One L2 per 128 L3s...
+			return required+l3+l2;
+		}
+	}
 	
 	private int sectorToBlock(int track, int side, int sector) {
 		return (track*32)+(side*16)+sector; //Can't be mithered to do the maths to de-magic these numbers...
