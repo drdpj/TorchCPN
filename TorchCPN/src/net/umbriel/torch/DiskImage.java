@@ -2,7 +2,6 @@ package net.umbriel.torch;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -151,7 +150,7 @@ public class DiskImage {
 				for (int s=0; s<Constants._SECTORS; s++) {
 					Sector sec = new Sector(t,side,s);
 					sectors.add(sec);
-					blockMap.put(sectors.indexOf(sec),sec);
+					blockMap.put(sec.getBlockNumber(),sec);
 				}
 			}
 		}
@@ -257,11 +256,12 @@ public class DiskImage {
 					for (int i=1; i<allocatedSectors.length;i++) { //for each of my empty sectors
 						Sector currentSector = blockMap.get(allocatedSectors[i]);
 						ArrayList<Integer> currentData = new ArrayList<Integer>();
-						for (int j=0; i<Constants._SECTOR_SIZE; j++) {
+						for (int j=0; j<Constants._SECTOR_SIZE; j++) {
 							int dataByte = fis.read();
 							if (dataByte>-1) {
 								currentData.add(dataByte);
 							} else {
+								System.out.println("pointer at "+fis.getChannel().position());
 								break;
 							}
 						}
@@ -294,6 +294,9 @@ public class DiskImage {
 						currentData.add(0);
 					}
 					l3Block.setData(currentData);
+					map.allocateSectors(allocatedSectors);
+					fis.close();
+					
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
