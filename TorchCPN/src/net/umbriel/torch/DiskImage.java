@@ -2,6 +2,7 @@ package net.umbriel.torch;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,6 +75,7 @@ public class DiskImage {
 	private Hashtable<String, DirectoryItem> directoryHash;
 	private Integer numberOfFiles;
 	private Integer firstFreeSector;
+
 
 	/**
 	 * Build the disk image from file F
@@ -242,13 +244,82 @@ public class DiskImage {
 			d.setRawFileName(f.getName().substring(0, f.getName().indexOf('.')).toUpperCase());
 			d.setRawExtension(f.getName().substring(f.getName().indexOf('.')+1).toUpperCase());
 			Integer[] allocatedSectors = map.getFreeSectors(sectorSize);
+			int nextFreeBlock=0;
+			d.setBlockAddress(allocatedSectors[nextFreeBlock]); // Set the directory start block to the first allocated sector
 			//First sector will be L2 or L3.
+
+
 			if (((fileSize+Constants._SECTOR_SIZE-1)/Constants._SECTOR_SIZE)>Constants._BLOCK_SIZE) {
-				//First sector is L2...
+				d.setL2Block(true);				//First sector is L2...
+				Sector l2Block = blockMap.get(allocatedSectors[nextFreeBlock]);
+				ArrayList<Integer> l2Data = new ArrayList<Integer>();
+
+				//Now we need to generate a series of L3 blocks...
+				try {
+					FileInputStream fis = new FileInputStream(f);
+
+					boolean moreData=true;
+					while (moreData) {
+						ArrayList<DataBlockInfo> blockInfo= new ArrayList<DataBlockInfo>();
+						nextFreeBlock++;
+
+						Sector l3Block = blockMap.get(allocatedSectors[nextFreeBlock]);
+						l2Data.add(l3Block.getBlockNumber()); // record the l3 in the l2..
+						for (int i=0; i<Constants._BLOCK_SIZE; i++) { //We're going to have 128 sectors
+							ArrayList<Integer> currentData = new ArrayList<Integer>();
+							nextFreeBlock++; // we shouldn't over-run as we've calculated this properly...
+							Sector currentSector = blockMap.get(allocatedSectors[nextFreeBlock]);
+							for (int j=0; j<Constants._SECTOR_SIZE; j++) {
+								int dataByte = fis.read();
+								if (dataByte>-1) {
+									currentData.add(dataByte);
+								} else {
+									moreData=false;
+									System.out.println("pointer at "+fis.getChannel().position());
+									break;
+								}
+							}
+							currentSector.setData(currentData);
+							int blocksUsed = DataBlockInfo.FIRST;
+							if (currentData.size()>128) {
+								blocksUsed= DataBlockInfo.BOTH;
+							}
+							if (currentData.size() < Constants._SECTOR_SIZE) {
+								for (int j=currentData.size(); j<Constants._SECTOR_SIZE; j++) {
+									currentData.add(0);
+								}
+							}
+							blockInfo.add(new DataBlockInfo(currentSector.getBlockNumber(),blocksUsed));
+							if (moreData==false) break;
+						}
+						ArrayList<Integer> currentData = new ArrayList<Integer>();
+						for (int i=0;i<blockInfo.size();i++) {
+
+							int block = blockInfo.get(i).getBlock();
+							int msb = (block>>8) & Constants._0xFF_MASK;
+							int lsb = block & Constants._0xFF_MASK;
+							if (blockInfo.get(i).getAllocation()==DataBlockInfo.BOTH) {
+								msb = msb | Constants._0xC0_MASK;
+							}
+							currentData.add(lsb);
+							currentData.add(msb);
+						}
+						for (int i=currentData.size();i<Constants._SECTOR_SIZE; i++) { //pad it
+							currentData.add(0);
+						}
+						l3Block.setData(currentData);
+					}// End of while (moreData)
+					l2Block.setData(l2Data); //set the l2 data
+					map.allocateSectors(allocatedSectors); //allocate the sectors
+ 					fis.close();  // What a hideous load of duplication. This needs rationalising at some point....
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			} else {
 				try {
 					//First sector is L3...
-					d.setBlockAddress(allocatedSectors[0]);
+
 					Sector l3Block = blockMap.get(allocatedSectors[0]);
 					ArrayList<DataBlockInfo> blockInfo= new ArrayList<DataBlockInfo>();
 
@@ -296,7 +367,7 @@ public class DiskImage {
 					l3Block.setData(currentData);
 					map.allocateSectors(allocatedSectors);
 					fis.close();
-					
+
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

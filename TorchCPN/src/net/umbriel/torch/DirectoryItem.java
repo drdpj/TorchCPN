@@ -95,6 +95,10 @@ public class DirectoryItem {
 	public boolean isL2Block() {
 		return l2Block;
 	}
+	
+	public void setL2Block(boolean b) {
+		this.l2Block=b;
+	}
 
 	public int getHighRecordNumber() {
 		return highRecordNumber;

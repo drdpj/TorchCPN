@@ -101,8 +101,8 @@ public class TestClass {
 							int data = ((msb & Constants._0x3F_MASK)<<Byte.SIZE)+lsb;
 							int flags = ((msb & Constants._0xC0_MASK)>>Constants._6_BITS);
 							if (data!=0) {
-								System.out.println("Data at:"+Integer.toHexString(data)+" "+
-										Integer.toBinaryString(flags));
+								//System.out.println("Data at:"+Integer.toHexString(data)+" "+
+										//Integer.toBinaryString(flags));
 							}
 						}
 					}
@@ -110,9 +110,11 @@ public class TestClass {
 	
 			}
 			System.out.println("for 44672 bytes you need "+DiskImage.requiredSectors(44672)); 
+			//DiskImage image = new DiskImage(new File("disk.dsd"));
+			//image.extractFile("SNAKE.COM", new File("."));
 			DiskImage image = new DiskImage();
-			image.addFile(new File("TYPETHIS.DOC"), 0);
-
+			image.addFile(new File("SNAKE.COM"), 0);
+			image.printMap();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
