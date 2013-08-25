@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 
 
@@ -156,6 +157,19 @@ public class DiskImage {
 				}
 			}
 		}
+		//Sector 0:1:9 byte 0xFE = 0x85
+		getSector(0,1,9).getData().set(254, 0x85);
+
+		//Sector 0:1:8 is full of something odd...
+		ArrayList<Integer> testPattern = new ArrayList<Integer>();
+		for (int i=0xd6; i<0x100; i++) {
+			testPattern.add(i);
+		}
+		for (int i=0; i<0xd6; i++) {
+			testPattern.add(i);
+		}
+
+		getSector(0,1,8).setData(testPattern);
 
 	}
 
@@ -244,14 +258,15 @@ public class DiskImage {
 			d.setRawFileName(f.getName().substring(0, f.getName().indexOf('.')).toUpperCase());
 			d.setRawExtension(f.getName().substring(f.getName().indexOf('.')+1).toUpperCase());
 			Integer[] allocatedSectors = map.getFreeSectors(sectorSize);
-			int nextFreeBlock=0;
-			d.setBlockAddress(allocatedSectors[nextFreeBlock]); // Set the directory start block to the first allocated sector
+			int nextFreeBlockIndex=0;
+			d.setHighRecordNumber(((fileSize+Constants._BLOCK_SIZE-1)/Constants._BLOCK_SIZE)-1); //High record is req blocks -1;
+			d.setBlockAddress(allocatedSectors[nextFreeBlockIndex]); // Set the directory start block to the first allocated sector
 			//First sector will be L2 or L3.
 
 
 			if (((fileSize+Constants._SECTOR_SIZE-1)/Constants._SECTOR_SIZE)>Constants._BLOCK_SIZE) {
 				d.setL2Block(true);				//First sector is L2...
-				Sector l2Block = blockMap.get(allocatedSectors[nextFreeBlock]);
+				Sector l2Block = blockMap.get(allocatedSectors[nextFreeBlockIndex]);
 				ArrayList<Integer> l2Data = new ArrayList<Integer>();
 
 				//Now we need to generate a series of L3 blocks...
@@ -261,14 +276,17 @@ public class DiskImage {
 					boolean moreData=true;
 					while (moreData) {
 						ArrayList<DataBlockInfo> blockInfo= new ArrayList<DataBlockInfo>();
-						nextFreeBlock++;
+						nextFreeBlockIndex++;
 
-						Sector l3Block = blockMap.get(allocatedSectors[nextFreeBlock]);
-						l2Data.add(l3Block.getBlockNumber()); // record the l3 in the l2..
+						Sector l3Block = blockMap.get(allocatedSectors[nextFreeBlockIndex]);
+						int lsb= l3Block.getBlockNumber() & Constants._0xFF_MASK;
+						int msb= (l3Block.getBlockNumber() >> 8) & Constants._0xFF_MASK;
+						l2Data.add(lsb); // record the l3 in the l2..
+						l2Data.add(msb);
 						for (int i=0; i<Constants._BLOCK_SIZE; i++) { //We're going to have 128 sectors
 							ArrayList<Integer> currentData = new ArrayList<Integer>();
-							nextFreeBlock++; // we shouldn't over-run as we've calculated this properly...
-							Sector currentSector = blockMap.get(allocatedSectors[nextFreeBlock]);
+							nextFreeBlockIndex++; // we shouldn't over-run as we've calculated this properly...
+							Sector currentSector = blockMap.get(allocatedSectors[nextFreeBlockIndex]);
 							for (int j=0; j<Constants._SECTOR_SIZE; j++) {
 								int dataByte = fis.read();
 								if (dataByte>-1) {
@@ -281,7 +299,7 @@ public class DiskImage {
 							}
 							currentSector.setData(currentData);
 							int blocksUsed = DataBlockInfo.FIRST;
-							if (currentData.size()>128) {
+							if (currentData.size()>Constants._BLOCK_SIZE) {
 								blocksUsed= DataBlockInfo.BOTH;
 							}
 							if (currentData.size() < Constants._SECTOR_SIZE) {
@@ -296,22 +314,29 @@ public class DiskImage {
 						for (int i=0;i<blockInfo.size();i++) {
 
 							int block = blockInfo.get(i).getBlock();
-							int msb = (block>>8) & Constants._0xFF_MASK;
-							int lsb = block & Constants._0xFF_MASK;
+							msb = (block>>8) & Constants._0xFF_MASK;
+							lsb = block & Constants._0xFF_MASK;
 							if (blockInfo.get(i).getAllocation()==DataBlockInfo.BOTH) {
 								msb = msb | Constants._0xC0_MASK;
 							}
 							currentData.add(lsb);
 							currentData.add(msb);
 						}
-						for (int i=currentData.size();i<Constants._SECTOR_SIZE; i++) { //pad it
+						while (currentData.size()<Constants._SECTOR_SIZE) { //Pad out sector if necessary...
 							currentData.add(0);
 						}
 						l3Block.setData(currentData);
 					}// End of while (moreData)
+					while (l2Data.size()<Constants._SECTOR_SIZE) { //Pad the block.
+						l2Data.add(0);
+					}
+
 					l2Block.setData(l2Data); //set the l2 data
 					map.allocateSectors(allocatedSectors); //allocate the sectors
- 					fis.close();  // What a hideous load of duplication. This needs rationalising at some point....
+
+
+					
+					fis.close();  // What a hideous load of duplication. This needs rationalising at some point....
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -329,23 +354,22 @@ public class DiskImage {
 						ArrayList<Integer> currentData = new ArrayList<Integer>();
 						for (int j=0; j<Constants._SECTOR_SIZE; j++) {
 							int dataByte = fis.read();
-							if (dataByte>-1) {
+							if (dataByte>-1) { //Whilst there's still data...
 								currentData.add(dataByte);
-							} else {
-								System.out.println("pointer at "+fis.getChannel().position());
+							} else { //Argh! No data!
 								break;
 							}
 						}
+						int blocksUsed = DataBlockInfo.FIRST; //We've at least used one block
+						if (currentData.size()>Constants._BLOCK_SIZE) {
+							blocksUsed= DataBlockInfo.BOTH; //Have we used both blocks?
+						}
+
+						while (currentData.size()<Constants._SECTOR_SIZE) { //Pad out sector...
+							currentData.add(0);
+
+						}
 						currentSector.setData(currentData);
-						int blocksUsed = DataBlockInfo.FIRST;
-						if (currentData.size()>128) {
-							blocksUsed= DataBlockInfo.BOTH;
-						}
-						if (currentData.size() < Constants._SECTOR_SIZE) {
-							for (int j=currentData.size(); j<Constants._SECTOR_SIZE; j++) {
-								currentData.add(0);
-							}
-						}
 						blockInfo.add(new DataBlockInfo(currentSector.getBlockNumber(),blocksUsed));
 					}
 					//Sort out the L3 block
@@ -372,9 +396,26 @@ public class DiskImage {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+		
 
 			}
+
 		}
+		//re-write the directory sectors (16 sectors, 16 entries per sector...)
+		for (int j=0; j<Constants._NUMBER_OF_DIRECTORY_SECTORS;j++) {
+			Sector directorySector = sectors.get(j);
+			ArrayList<Integer> directoryData=new ArrayList<Integer>();
+			for (int k=(j*Constants._SIZE_OF_DIRECTORY_ENTRY);
+					k<(j*Constants._SIZE_OF_DIRECTORY_ENTRY)+
+					(Constants._SECTOR_SIZE/Constants._SIZE_OF_DIRECTORY_ENTRY); k++) {
+				directoryData.addAll(directory.get(k).getDataArrayList());
+			}
+			directorySector.setData(directoryData);
+		}
+		//Write the Allocation Map Sectors... (0:1:6-7, or the two sectors after the 16 directory ones...)
+		getSector(0,1,6).setData(Arrays.asList(map.getRawMap()).subList(0, Constants._SECTOR_SIZE).toArray(new Integer[0]));
+		getSector(0,1,7).setData(Arrays.asList(map.getRawMap()).subList(Constants._SECTOR_SIZE,Constants._SECTOR_SIZE*2).toArray(new Integer[0]));
+		numberOfFiles++;
 	}
 
 	/**
@@ -442,6 +483,21 @@ public class DiskImage {
 		}
 	}
 
+	/**
+	 * Get the raw interleaved disk image
+	 * @return the raw interleaved disk image as byte array
+	 */
+	public byte[] getBytes() {
+		ArrayList<Integer> finalData = new ArrayList<Integer>();
+		for (Sector s: sectors) {
+			finalData.addAll(s.getData());
+		}
+		byte[] bytes = new byte[finalData.size()];
+		for (int i=0;i<bytes.length;i++) {
+			bytes[i]=(byte)finalData.get(i).intValue();
+		}
+		return bytes;
+	}
 	/**
 	 * 
 	 */

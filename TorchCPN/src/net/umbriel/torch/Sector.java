@@ -28,6 +28,10 @@ public class Sector {
 		setTrack(track);
 		setSide(side);
 		setSectorNumber(sector);
+		data = new ArrayList<Integer>();
+		for (int i=0; i<Constants._SECTOR_SIZE; i++) { //Zero data...
+			data.add(0);
+		}
 	}
 
 	/**
@@ -105,6 +109,12 @@ public class Sector {
 		this.data = data;
 	}
 
+	public void setData(Integer[] intData) {
+		data=new ArrayList<Integer>();
+		for (int i=0; i<intData.length;i++) {
+			data.add(intData[i]);
+		}
+	}
 	/**
 	 * @return the blockNumber
 	 */

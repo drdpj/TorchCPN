@@ -3,6 +3,7 @@ package net.umbriel.torch;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -101,8 +102,8 @@ public class TestClass {
 							int data = ((msb & Constants._0x3F_MASK)<<Byte.SIZE)+lsb;
 							int flags = ((msb & Constants._0xC0_MASK)>>Constants._6_BITS);
 							if (data!=0) {
-								//System.out.println("Data at:"+Integer.toHexString(data)+" "+
-										//Integer.toBinaryString(flags));
+								System.out.println("Data at:"+Integer.toHexString(data)+" "+
+										Integer.toBinaryString(flags));
 							}
 						}
 					}
@@ -110,11 +111,22 @@ public class TestClass {
 	
 			}
 			System.out.println("for 44672 bytes you need "+DiskImage.requiredSectors(44672)); 
-			//DiskImage image = new DiskImage(new File("disk.dsd"));
-			//image.extractFile("SNAKE.COM", new File("."));
+			DiskImage image = new DiskImage(new File("test.dsd"));
+			//ArrayList<Integer> data = image.getSector(0, 1, 8).getData();
+			//for (Integer d: data) {
+			//	System.out.print(Integer.toHexString(d)+" ");
+			//}
+			image.extractFile("SNAKE.COM", new File("."));
+			/**
 			DiskImage image = new DiskImage();
 			image.addFile(new File("SNAKE.COM"), 0);
+			image.addFile(new File("SNAKCHAR.DAT"), 0);
+			byte[] image2 = image.getBytes();
 			image.printMap();
+			FileOutputStream fos = new FileOutputStream("test.dsd");
+			fos.write(image2);**/
+			
+			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

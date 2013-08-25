@@ -29,6 +29,7 @@ public class Constants {
 	static final int _HIGHRECORD_MSB_INDEX = 3;
 	static final int _HIGHRECORD_LSB_INDEX = 2;
 	static final int _NUMBER_OF_DIRECTORY_SECTORS = 16;
+	static final int _SIZE_OF_DIRECTORY_ENTRY = 16;
 	static final int _DIRECTORY_SIZE = 256;
 	static final int _6_BITS = 6;
 	static final int _0xC0_MASK = 0xC0;

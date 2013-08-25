@@ -1,6 +1,7 @@
 package net.umbriel.torch;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DirectoryItem {
@@ -19,9 +20,11 @@ public class DirectoryItem {
 
 
 	public DirectoryItem() {
-		
+		for (int i=0; i<Constants._WORD_SIZE; i++) {
+			rawData[i]=0;
+		}
 	}
-	
+
 	public DirectoryItem(List<Integer> data) {
 		this.setRawData(data.toArray(new Integer[0]));
 	}
@@ -77,10 +80,19 @@ public class DirectoryItem {
 	public String getFileName() {
 		return (fileName.trim()+"."+extension.trim());
 	}
-	
+
 	public Integer[] getRawData() {
 		return rawData;
 	}
+	
+	public ArrayList<Integer> getDataArrayList() {
+		ArrayList<Integer> data = new ArrayList<Integer>();
+		for (int i=0; i< rawData.length; i++) {
+			data.add(rawData[i]);
+		}
+		return data;
+	}
+	
 	public void setRawData(Integer[] data) {
 		this.rawData = data;
 		processBytes();
@@ -91,13 +103,15 @@ public class DirectoryItem {
 	}
 	public void setBlockAddress(int blockAddress) {
 		this.blockAddress = blockAddress;
+		updateRaw();
 	}
 	public boolean isL2Block() {
 		return l2Block;
 	}
-	
+
 	public void setL2Block(boolean b) {
 		this.l2Block=b;
+		updateRaw();
 	}
 
 	public int getHighRecordNumber() {
@@ -105,51 +119,132 @@ public class DirectoryItem {
 	}
 	public void setHighRecordNumber(int highRecordNumber) {
 		this.highRecordNumber = highRecordNumber;
+		updateRaw();
 	}
 	public int getUserNumber() {
 		return userNumber;
 	}
 	public void setUserNumber(int userNumber) {
 		this.userNumber = userNumber;
+		updateRaw();
 	}
 	public String getRawFileName() {
 		return fileName;
 	}
 	public void setRawFileName(String fileName) {
+		while (fileName.length()<8) {
+			fileName = fileName+" ";
+		}
 		this.fileName = fileName;
+		updateRaw();
 	}
 	public String getRawExtension() {
 		return extension;
 	}
 	public void setRawExtension(String extension) {
+		while (extension.length()<3) {
+			extension = extension+" ";
+		}
 		this.extension = extension;
+		updateRaw();
 	}
+	
 	public boolean[] getAttributes() {
 		return attributes;
 	}
 	public void setAttributes(boolean[] attributes) {
 		this.attributes = attributes;
+		updateRaw();
 	}
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
+		updateRaw();
 	}
 	public boolean isSystemFile() {
 		return systemFile;
 	}
 	public void setSystemFile(boolean systemFile) {
 		this.systemFile = systemFile;
+		updateRaw();
 	}
 	public boolean isArchived() {
 		return archived;
 	}
 	public void setArchived(boolean archived) {
 		this.archived = archived;
+		updateRaw();
 	}
-	
 
+	private void updateRaw() {
+		int msb=0;
+		int lsb=0;
+		//Block address, little endian
+		lsb=blockAddress & Constants._0xFF_MASK;
+		msb=(blockAddress >>8) & Constants._0xFF_MASK;
+		rawData[Constants._BLOCKADDR_LSB_INDEX]=lsb;
+		rawData[Constants._BLOCKADDR_MSB_INDEX]=msb;
+		
+		//bit 14=0
+		BitUtils.unSetBit(rawData[Constants._BLOCKADDR_MSB_INDEX],6);
+		//bit 15=L2/L3
+		if (l2Block) {
+			msb=rawData[Constants._BLOCKADDR_MSB_INDEX];
+			msb=BitUtils.setHighBit(msb);
+			rawData[Constants._BLOCKADDR_MSB_INDEX]=msb;
+		} else {
+			msb=rawData[Constants._BLOCKADDR_MSB_INDEX];
+			msb=BitUtils.unsetHighBit(msb);
+			rawData[Constants._BLOCKADDR_MSB_INDEX]=msb;
+		}
+
+		//High record number, little endian
+		lsb=highRecordNumber & Constants._0xFF_MASK;
+		msb=(highRecordNumber >>8) & Constants._0xFF_MASK;
+		rawData[Constants._HIGHRECORD_LSB_INDEX]=lsb;
+		rawData[Constants._HIGHRECORD_MSB_INDEX]=msb;
+		//User Number
+		rawData[Constants._USERNUMBER_INDEX]=userNumber;
+
+		//Filename (8chars)
+		for (int i=0; i<fileName.length(); i++) {
+			rawData[Constants._FILENAME_INDEX+i]=(int)fileName.charAt(i);
+		}
+		
+		//Attributes
+		for (int i=0; i<attributes.length; i++) {
+			if (attributes[i]) {
+				BitUtils.setHighBit(rawData[Constants._FILENAME_INDEX]+i);
+			} else {
+				BitUtils.unsetHighBit(rawData[Constants._FILENAME_INDEX]+i);
+			}
+		}
+
+		//Extension (3chars)
+		
+		for (int i=0; i<extension.length(); i++) {
+			rawData[Constants._EXTENSION_INDEX+i]=(int)extension.charAt(i);
+		}
+		
+		
+		//RW-USR-ARCHIVE bits
+
+		if (systemFile) {
+			BitUtils.setHighBit(rawData[Constants._SYSTEM_BIT_INDEX]);
+		} 
+		else BitUtils.unsetHighBit(rawData[Constants._SYSTEM_BIT_INDEX]);
+
+		if (readOnly) {
+			BitUtils.setHighBit(rawData[Constants._READONLY_BIT_INDEX]);
+		}
+		else BitUtils.unsetHighBit(rawData[Constants._READONLY_BIT_INDEX]);
+		if (archived) {
+			BitUtils.setHighBit(rawData[Constants._ARCHIVE_BIT_INDEX]);
+		}
+		else BitUtils.unsetHighBit(rawData[Constants._ARCHIVE_BIT_INDEX]);
+	}
 
 
 
