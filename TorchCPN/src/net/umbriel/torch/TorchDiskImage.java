@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Hashtable;
 
 
-public class DiskImage {
+public class TorchDiskImage {
 
 	/*
 	 * Torch disk images are two sides of 80 tracks with 10 sectors of
@@ -82,7 +82,7 @@ public class DiskImage {
 	 * Build the disk image from file F
 	 * @param f
 	 */
-	public DiskImage(File f) {
+	public TorchDiskImage(File f) {
 		sectors = new ArrayList<Sector>();
 		blockMap = new Hashtable<Integer,Sector>();
 		// Load the image, store sectors and put them in the hash
@@ -135,7 +135,7 @@ public class DiskImage {
 	/**
 	 * Empty constructor
 	 */
-	public DiskImage() {
+	public TorchDiskImage() {
 		map = new AllocationMap();
 		sectors = new ArrayList<Sector>();
 		directory = new ArrayList<DirectoryItem>();

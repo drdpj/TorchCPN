@@ -110,21 +110,22 @@ public class TestClass {
 				}
 	
 			}
-			System.out.println("for 44672 bytes you need "+DiskImage.requiredSectors(44672)); 
-			DiskImage image = new DiskImage(new File("test.dsd"));
-			//ArrayList<Integer> data = image.getSector(0, 1, 8).getData();
+			System.out.println("for 44672 bytes you need "+TorchDiskImage.requiredSectors(44672)); 
+			TorchDiskImage currentImage = new TorchDiskImage(new File("disk.dsd"));
+			//ArrayList<Integer> data = currentImage.getSector(0, 1, 8).getData();
 			//for (Integer d: data) {
 			//	System.out.print(Integer.toHexString(d)+" ");
 			//}
-			image.extractFile("SNAKE.COM", new File("."));
-			/**
-			DiskImage image = new DiskImage();
+			currentImage.extractFile("SNAKE.COM", new File("."));
+			currentImage.extractFile("SNAKCHAR.DAT", new File("."));
+			
+			TorchDiskImage image = new TorchDiskImage();
 			image.addFile(new File("SNAKE.COM"), 0);
 			image.addFile(new File("SNAKCHAR.DAT"), 0);
 			byte[] image2 = image.getBytes();
 			image.printMap();
 			FileOutputStream fos = new FileOutputStream("test.dsd");
-			fos.write(image2);**/
+			fos.write(image2);
 			
 			
 		} catch (FileNotFoundException e) {
